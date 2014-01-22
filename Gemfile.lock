@@ -1,0 +1,56 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activemodel (3.2.16)
+      activesupport (= 3.2.16)
+      builder (~> 3.0.0)
+    activesupport (3.2.16)
+      i18n (~> 0.6, >= 0.6.4)
+      multi_json (~> 1.0)
+    builder (3.0.4)
+    erubis (2.7.0)
+    health-data-standards (3.3.0)
+      activesupport (~> 3.2.14)
+      builder (~> 3.0.0)
+      erubis (~> 2.7.0)
+      log4r (~> 1.1.10)
+      memoist (~> 0.9.1)
+      mongoid (~> 3.1.4)
+      nokogiri (~> 1.6.0)
+      rest-client (~> 1.6.7)
+      rubyzip (= 0.9.9)
+      uuid (~> 2.3.7)
+    i18n (0.6.9)
+    log4r (1.1.10)
+    macaddr (1.6.1)
+      systemu (~> 2.5.0)
+    memoist (0.9.1)
+    mime-types (2.0)
+    mini_portile (0.5.2)
+    mongoid (3.1.6)
+      activemodel (~> 3.2)
+      moped (~> 1.4)
+      origin (~> 1.0)
+      tzinfo (~> 0.3.29)
+    moped (1.5.1)
+    multi_json (1.8.4)
+    nokogiri (1.6.1)
+      mini_portile (~> 0.5.0)
+    origin (1.1.0)
+    rake (10.1.0)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+    ruby-prof (0.14.2)
+    rubyzip (0.9.9)
+    systemu (2.5.2)
+    tzinfo (0.3.38)
+    uuid (2.3.7)
+      macaddr (~> 1.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  health-data-standards
+  rake
+  ruby-prof
