@@ -148,8 +148,9 @@
     <structuredBody>
       <component>
         <section>
-
-        <%= yield %> 
+        <%number_of_entries.times do %>
+        <%= render :template=>"encounter_performed_fragment" %> 
+        <% end %>
         </section>
       </component>
     </structuredBody>

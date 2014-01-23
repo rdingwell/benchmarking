@@ -1,3 +1,20 @@
+GIT
+  remote: https://github.com/projectcypress/health-data-standards.git
+  revision: defce68fdec9665b3368766193323fd8d0101a7f
+  branch: template_dir_fix
+  specs:
+    health-data-standards (3.3.1)
+      activesupport (~> 3.2.14)
+      builder (~> 3.0.0)
+      erubis (~> 2.7.0)
+      log4r (~> 1.1.10)
+      memoist (~> 0.9.1)
+      mongoid (~> 3.1.4)
+      nokogiri (~> 1.6.0)
+      rest-client (~> 1.6.7)
+      rubyzip (= 0.9.9)
+      uuid (~> 2.3.7)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -9,17 +26,8 @@ GEM
       multi_json (~> 1.0)
     builder (3.0.4)
     erubis (2.7.0)
-    health-data-standards (3.3.0)
-      activesupport (~> 3.2.14)
-      builder (~> 3.0.0)
-      erubis (~> 2.7.0)
-      log4r (~> 1.1.10)
-      memoist (~> 0.9.1)
-      mongoid (~> 3.1.4)
-      nokogiri (~> 1.6.0)
-      rest-client (~> 1.6.7)
-      rubyzip (= 0.9.9)
-      uuid (~> 2.3.7)
+    factory_girl (4.1.0)
+      activesupport (>= 3.0.0)
     i18n (0.6.9)
     log4r (1.1.10)
     macaddr (1.6.1)
@@ -51,6 +59,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  health-data-standards
+  factory_girl
+  health-data-standards!
+  nokogiri
   rake
   ruby-prof
+  rubyzip
