@@ -27,7 +27,7 @@
     <patientRole>
       <!-- id root="Cypress" extension="52b170a4983a9548800000cf"/ -->
       <!-- Fake Medicare HIC number -->
-      <id extension="017370831A" root="2.16.840.1.113883.4.572"/>
+      <id extension="" root="2.16.840.1.113883.4.572"/>
       <addr use="HP">
         <streetAddressLine>202 Burlington Rd.</streetAddressLine>
         <city>Bedford</city>
@@ -149,7 +149,7 @@
       <component>
         <section>
         <%number_of_entries.times do %>
-        <%= render :template=>"encounter_performed_fragment" %> 
+        <%== render :template=>"encounter_performed_fragment" %> 
         <% end %>
         </section>
       </component>

@@ -1,6 +1,8 @@
-require 'health-data-standards'
-require 'zip/zipfilesystem'
-require "nokogiri"
-require_relative 'lib/benchmarking/report.rb'
-require_relative 'lib/utils.rb'
-import 'lib/tasks/benchmark.rake'
+#!/usr/bin/env rake
+# Add your own tasks in files placed in lib/tasks ending in .rake,
+# for example lib/tasks/capistrano.rake, and they will automatically be available to Rake.
+
+require File.expand_path('../config/application', __FILE__)
+
+require "benchmarking.rb"
+Benchmarking::Application.load_tasks
