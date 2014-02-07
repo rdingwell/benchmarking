@@ -30,7 +30,7 @@ class ImportJob
 
   def import_xml_archive(report)
     report.measure("Importing #{@params[:archive]}") do
-      HealthDataStandards::Import::BulkRecordImporter.import_archive(File.new(@params[:archive]))
+      HealthDataStandards::Import::BulkRecordImporter.import_archive(File.new(@params[:archive]),{generate_mrn: true})
     end
   end
 

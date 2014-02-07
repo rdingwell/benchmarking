@@ -1,0 +1,219 @@
+include Benchmarking
+
+namespace :benchmark do
+
+
+RECORD_NUMBERS = [100,1000,10000,20000,30000,40000,50000,60000,70000,80000,90000,100000]
+ 
+ 
+  namespace :setup  do
+    desc "generate records and archives for import testing"
+    task :generate_data , [:force_rebuild] => "benchmark:configure" do |t,args|
+      force = args.force_rebuild == "true"
+      puts "Creating 100000 records in tmp/patient_records"
+      generate_records(100000,100,:xml,"tmp/patient_records",force)
+      rep =report :archive_records do 
+      RECORD_NUMBERS.each do |number|
+        gc_before do
+          puts "Archiving #{number} records from tmp/patient_records to tmp/archive_#{number}.zip"
+          measure "Archive #{number} of files" do
+           archive_directory("tmp/patient_records","tmp/archive_#{number}.zip",force,number)
+         end
+        end
+      end
+      rep.save
+      puts rep.to_s
+    end
+  end
+
+	
+  
+
+  namespace :reading  do
+
+    desc "reading from zip file" 
+    task :from_archive   => :environment do
+      report = Benchmarking::Report.new
+      RECORD_NUMBERS.each do |i|
+        gc_before {
+          puts "Reading zip  #{i} "
+          Zip::ZipFile.open("tmp/archive_#{i}.zip") do |zip_file|
+            entries = zip_file.glob("*.xml")
+            entries.each do |entry|
+             report.measure("zip read #{i}") { zip_file.read(entry)}
+            end
+          end
+        }
+      end
+
+      puts report.to_s
+    end
+
+
+    desc "reading from directory" 
+    task :from_directory  => :environment do
+      report = Benchmarking::Report.new
+      [100,1000,10000,100000].each do |i| 
+        gc_before {
+          puts "Reading from directory "
+          entries = Dir.glob("tmp/patient_records/*.xml")
+          entries[0..i].each do |entry|
+            report.measure("directory read #{i}") { File.read(entry)}
+          end
+        }
+      end
+      puts report.to_s
+    end
+
+    desc "import archives" 
+    task :import  => :environment do
+
+    end
+  end
+
+end
+
+namespace :archive do
+
+  desc "benchmark archiving xml records"
+  task :generate_xml_archive => :environment do 
+   report = Benchmarking::Report.new(label: "archive_xml")
+    APP_CONFIG[].each do |number|
+      gc_before {
+        puts "Archiving #{number} records from tmp/patient_records to tmp/archive_xml_#{number}.zip"
+        report.measure("Archive #{number} of files") {generate_archive("tmp/archive_xml_#{number}.zip",number,100,:xml, force)}
+      }
+  end
+
+
+  desc "benchmark archiving xml records"
+  task :generate_json_archive => :environment do 
+   report = Benchmarking::Report.new(label: "archive_json")
+    APP_CONFIG[].each do |number|
+      gc_before {
+        puts "Archiving #{number} records  tmp/archive_json_#{number}.zip"
+        report.measure("Archive #{number} of files") {generate_archive("tmp/archive_json_#{number}.zip", number,100,:xml, force)}
+      }
+  end
+
+end
+
+
+namespace :parsing do
+  desc "benchmark xml parsing"
+  task :xml => :environment do 
+    report = Benchmarking::Report.new(label: "Parsing xml")
+    record_0 = generate_patient_xml(0)
+    record_10 = generate_patient_xml(10)
+    record_100 = generate_patient_xml(100)
+    record_1000 = generate_patient_xml(1000)
+    [1,10,100,1000].each do |i|
+      i.times do 
+        report.measure("Parse 0 entires #{i} times") {Nokogiri::XML(record_0)}
+        report.measure("Parse 10 entires #{i} times ") {Nokogiri::XML(record_10)}
+        report.measure("Parse 100 entires #{i} times") {Nokogiri::XML(record_100)}
+        report.measure("Parse 1000 entires #{i} times") {Nokogiri::XML(record_1000)}
+      end
+    end
+    report.save
+    puts report.to_s
+  end
+
+  desc "benchmark xml parsing"
+  task :json => :environment do 
+    report = Benchmarking::Report.new("Parsing Json")
+    record_0 = generate_patient_json(0)
+    record_10 = generate_patient_json(10)
+    record_100 = generate_patient_json(100)
+    record_1000 = generate_patient_json(1000)
+    [1,10,100,1000].each do |i|
+      i.times do 
+        report.measure("Parse 0 entires #{i} times") {JSON.parse(record_0,,max_nesting: 100)}
+        report.measure("Parse 10 entires #{i} times ") {JSON.parse(record_10),max_nesting: 100}
+        report.measure("Parse 100 entires #{i} times") {JSON.parse(record_100,max_nesting: 100)}
+        report.measure("Parse 1000 entires #{i} times") {JSON.parse(record_1000),max_nesting: 100}
+      end
+    end
+    report.save
+    puts report.to_s
+  end
+end
+
+namespace :importing do
+
+  desc "benchmark xml parsing"
+  task :xml => :environment do 
+    report = Benchmarking::Report.new(label: "Import xml")
+    record_0 = Nokogiri::XML(generate_patient_xml(0))
+    record_10 = Nokogiri::XML(generate_patient_xml(10))
+    record_100 = Nokogiri::XML(generate_patient_xml(100))
+    record_1000 = Nokogiri::XML(generate_patient_xml(1000))
+    [1,10,100,1000].each do |i|
+      i.times do 
+        report.measure("Import 0 entires #{i} times") { HealthDataStandards::Import::Cat1.parse_doc(record_0)}
+        report.measure("Import 10 entires #{i} times ") { HealthDataStandards::Import::Cat1.parse_doc(record_10)}
+        report.measure("Import 100 entires #{i} times") {HealthDataStandards::Import::Cat1.parse_doc(record_100)}
+        report.measure("Import 1000 entires #{i} times") {HealthDataStandards::Import::Cat1.parse_doc(record_1000)}
+      end
+    end
+    report.save
+    puts report.to_s
+  end
+  
+
+
+  desc "benchmark json parsing"
+  task :json => :environment do 
+    report = Benchmarking::Report.new(label: "Import json")
+    record_0 = JSON.parse(generate_patient_json(0), :max_nesting: 100)
+    record_10 = JSON.parse(generate_patient_json(10), :max_nesting: 100)
+    record_100 = JSON.parse(generate_patient_json(100), :max_nesting: 100)
+    record_1000 = JSON.parse(generate_patient_json(1000), :max_nesting: 100)
+    [1,10,100,1000].each do |i|
+      i.times do 
+        report.measure("Import 0 entires #{i} times") { HealthDataStandards::Import::Cat1.parse_doc(record_0)}
+        report.measure("Import 10 entires #{i} times ") { HealthDataStandards::Import::Cat1.parse_doc(record_10)}
+        report.measure("Import 100 entires #{i} times") {HealthDataStandards::Import::Cat1.parse_doc(record_100)}
+        report.measure("Import 1000 entires #{i} times") {HealthDataStandards::Import::Cat1.parse_doc(record_1000)}
+      end
+    end
+    report.save
+    puts report.to_s
+  end
+
+
+  desc "benchmark saving records"
+  task :saving => :environment do 
+    report = Benchmarking::Report.new(label: "Saving records")
+    [1,10,100,1000,10000,100000].each do |i|
+      [0,10,100,1000].each do |number_of_entries|
+        drop_collections("records")
+        record = JSON.parse(generate_patient_json(number_of_entries), :max_nesting: 100)
+        i.times do 
+          _record = record.clone
+          report.measure("Saving #{number_of_entries} entires #{i} times") {_record.save}
+        end
+      end
+    end
+    report.save
+    puts report.to_s
+  end
+
+
+  task :import_xml_archive,[number_records,number_of_entries] do
+    # generate archive
+    # clear record collection
+    # import records
+
+  end
+
+
+  task :import_json_archive do 
+    # generate archive
+    # clear record collection
+    # import records
+  end
+
+end
+
+

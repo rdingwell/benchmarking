@@ -14,7 +14,9 @@ module Utils
   
   def report(name, &block)
       report = Report.new(label: name)
+      report.start_time = Time.now
       report.instance_eval &block
+      report.save
       report
   end
 

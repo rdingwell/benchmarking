@@ -3,16 +3,21 @@ include Benchmarking
 namespace :import do 
 
   task :bulk_importer, [:working_directory, :number_of_records,:number_of_entries, :force]  => :environment do |t,args|
-   rep = report :bulk_import_archive do
-     working_directory = File.join(args.working_directory,args.format,"archive_xml_#{args.number_of_records}")
-     archive_name = File.join(args.working_directory,xml,"archive_xml_#{args.number_of_records}.zip")
-     generate_archive file_name: archive_name , number_of_records: args.number_of_records.to_i, number_of_entries: args.number_of_entries.to_i, format: :xml, force: args.force == "true"
+   rep = report "HDS Bulk Importer: #{args.number_of_records} Records -> #{args.number_of_entries} Entries" do
+     working_directory = File.join(args.working_directory,"xml","archive_xml_#{args.number_of_records}")
+     archive_name = File.join(args.working_directory,"xml","archive_xml_#{args.number_of_records}.zip")
+     generate_archive file_name: archive_name , 
+                      number_of_records: args.number_of_records.to_i, 
+                      number_of_entries: args.number_of_entries.to_i, 
+                      format: :xml, 
+                      force: args.force == "true"
      GC.start 
-      measure("Importing #{@params[:archive]}") do
-        HealthDataStandards::Import::BulkRecordImporter.import_archive(File.new(@params[:archive]))
+      measure("Importing #{archive_name}") do
+        HealthDataStandards::Import::BulkRecordImporter.import_archive(File.new(archive_name),{generate_mrn: false})
       end
-    end.save
-    puts rep.to_s
+    end
+    rep.save
+    puts ReportGenerator.generate_report(rep)
   end
 
   desc "importing from zip file" 
@@ -37,6 +42,14 @@ namespace :import do
               doc = is_json ? JSON.parse(str, max_nesting: 100) : Nokogiri::XML(str)
             end
 
+            if !is_json
+              measure :extracting_providers do 
+                begin
+                  providers = CDA::ProviderImporter.instance.extract_providers(doc)
+                rescue Exception => e
+                end
+              end
+            end
             measure :transform_into_record_object do
                if !is_json 
                   doc.root.add_namespace_definition('cda', 'urn:hl7-org:v3')
@@ -45,7 +58,7 @@ namespace :import do
               record = is_json ? Record.new(doc) : HealthDataStandards::Import::Cat1::PatientImporter.instance.parse_cat1(doc)
             end
             measure :save_to_database do
-             record.save!
+             Record.update_or_create(record,{generate_mrn: true})
             end
           end
         end
@@ -85,8 +98,7 @@ namespace :import do
     start_delayed_workers(args.workers)
     wait_until_finished {
        count = Delayed::Job.count()
-       percentage = args.number_of_times.to_i/count
-       print "\r #{count} Jobs left.  #{1/(percentage * 100)} percent complete"
+       print "\r #{count} Jobs left. "
        STDOUT.flush
      }
     stop_delayed_workers
@@ -98,12 +110,12 @@ namespace :import do
       bm.merge(r)
     end
     bm.save
+    puts ReportGenerator.generate_report(bm)
     #start number of workers
     #wait until done
     #create merged results
 
     end
-
 
 
 end
