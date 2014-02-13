@@ -68,7 +68,7 @@ namespace :import do
   end
 
 
-  task :parallel_import_archive,[:working_directory,:format,:number_of_records, :number_of_entries, :number_of_times,:workers,:force] => :environment do |t,args|
+  task :parallel_import_archive,[:working_directory,:number_of_records, :number_of_entries, :format, :number_of_times,:workers,:descrete_measurement, :force] => :environment do |t,args|
     #number of archives
     #number of processess
     #make sure that the delayed jobs are stopped
@@ -89,10 +89,12 @@ namespace :import do
                      format: args.format.to_sym, 
                      force: args.force == "true"
     correlation_id = UUID.new.generate
-
+    label = "Import from archive: #{args.number_of_records} records -> #{args.number_of_entries} entries -> #{args.format} format " 
+    params = args.to_hash
+    params.merge!({label:label, archive: archive, format: args.format.to_sym, correlation_id: correlation_id, descrete_measurement:args.descrete_measurement=="true"})
     puts "Generating #{args.number_of_times} Jobs"
     args.number_of_times.to_i.times do |i|
-      ImportJob.new({archive: archive, format: args.format.to_sym, correlation_id: correlation_id}).delay.perform
+      ImportJob.new(params).delay.perform
     end
     puts "Starting #{args.workers}"
     start_delayed_workers(args.workers)
@@ -102,7 +104,7 @@ namespace :import do
        STDOUT.flush
      }
     stop_delayed_workers
-    bm = Benchmarking::Report.new(label: "Importing #{args.format} Archive: merged ",
+    bm = Benchmarking::Report.new(label: "Merged: #{label} ",
                                   correlation_id: correlation_id)
     
     puts "merging results"
