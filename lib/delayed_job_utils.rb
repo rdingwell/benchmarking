@@ -1,4 +1,6 @@
 require 'delayed/command'
+
+Delayed::Worker::DEFAULT_MAX_RUN_TIME = 40.hours
 module DelayedJobUtils
 
 def start_delayed_workers(workers=1)

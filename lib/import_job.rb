@@ -20,7 +20,7 @@ class ImportJob
 
   def descrete_measurement(report)
     report.measure("Importing #{@params[:archive]}") do
-     is_json = @params[:format] == "json"
+     is_json = @params[:format] == :json
        Zip::ZipFile.open(@params[:archive]) do |zip_file|
           entries = zip_file.entries
           length = entries.length
