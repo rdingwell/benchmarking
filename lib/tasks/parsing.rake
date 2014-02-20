@@ -13,7 +13,7 @@ namespace :parsing do
   desc "saving to database"
   task :saving_to_database,[:number_of_entries, :number_of_records, :clear_records, :no_record]=> :environment do |t,args|
     drop_collection :records if args.clear_records =="true"
-    bm = ParsingJob.new(args.to_hash.merge({label: "#{args.format} transformation"})).saving_to_database 
+    bm = ParsingJob.new(args.to_hash.merge({label: "#{args.format} saving_to_database"})).saving_to_database 
     puts ReportGenerator.generate_report(bm)   
   end
 
@@ -22,7 +22,7 @@ namespace :parsing do
     correlation_id = UUID.new.generate
     reset_delayed_jobs_and_workers()
     drop_collection :records if args.clear_records =="true"
-    params = args.to_hash.merge({label: "parrallel #{args.format} transformation", correlation_id: correlation_id})
+    params = args.to_hash.merge({label: "parrallel #{args.format} saving_to_database", correlation_id: correlation_id})
     args.number_of_times.to_i.times do |i|
       ParsingJob.new(params).delay.saving_to_database 
     end
