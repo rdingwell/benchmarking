@@ -79,7 +79,7 @@ namespace :import do
   end
 
 
-  task :parallel_import_archive,[:working_directory,:number_of_records, :number_of_entries, :format, :number_of_times,:workers,:force,:descrete_measurements, :no_save] => :environment do |t,args|
+  task :parallel_import_archive,[:working_directory,:number_of_records, :number_of_entries, :format, :number_of_times,:workers,:force,:descrete_measurements,:no_record, :no_save] => :environment do |t,args|
 
     #number of archives
     #number of processess

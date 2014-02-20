@@ -5,6 +5,7 @@ require_relative 'mongo_utils.rb'
 require_relative 'record_utils.rb'
 require_relative 'record_utils.rb'
 require_relative 'utils.rb'
+require_relative 'parsing_job.rb'
 
 module Benchmarking
   include RecordUtils

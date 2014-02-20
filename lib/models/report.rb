@@ -162,5 +162,14 @@ class AggregateItem
     def to_s
       self.aggregate_reports.collect{|x| x.to_s}.join("\n")
     end
+
+    def self.merge_by_correlation_id(correlation_id, params)
+    bm = Benchmarking::Report.new(params.merge({correlation_id: correlation_id}))
+    Benchmarking::Report.where(correlation_id: correlation_id).each do |r|
+      bm.merge(r)
+    end
+    bm.save
+    bm
+    end
   end
 end

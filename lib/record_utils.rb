@@ -72,9 +72,27 @@ module RecordUtils
     end
   end
 
-  def generate_patient_xml(number_of_entries)  	
-    @@rendering_context.render({template: 'wrapper', locals: {number_of_entries: number_of_entries}})
+  def generate_patient_xml(number_of_entries, as_doc=false)  	
+    str = @@rendering_context.render({template: 'wrapper', locals: {number_of_entries: number_of_entries}})
+    if as_doc
+      doc = Nokogiri::XML(str)
+     {'cda' => 'urn:hl7-org:v3',
+                'sdtc' => 'urn:hl7-org:sdtc',
+                'gc32' => 'urn:hl7-org:greencda:c32',
+                'ccr' => 'urn:astm-org:CCR',
+                'vs' => 'urn:ihe:iti:svs:2008',
+                'xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+                'hrf-md' => 'http://www.hl7.org/schemas/hdata/2009/11/metadata',
+                'nlm' => 'urn:ihe:iti:svs:2008'
+                }.each_pair do |k,v|
+        doc.root.add_namespace(k,v)
+      end
+      return doc
+    else
+      return str
+    end
   end
+
 
   def generate_patient_json(number_of_entries)   
     record =  @@rendering_context.render({template: 'wrapper', locals: {number_of_entries: number_of_entries}})

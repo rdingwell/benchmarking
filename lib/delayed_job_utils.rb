@@ -4,6 +4,7 @@ Delayed::Worker::DEFAULT_MAX_RUN_TIME = 40.hours
 module DelayedJobUtils
 
 def start_delayed_workers(workers=1)
+    puts "Starting #{workers}"
     Delayed::Command.new(["start", "-n#{workers}"]).daemonize
   end
 
@@ -31,4 +32,11 @@ def start_delayed_workers(workers=1)
     Delayed::Job.all.destroy
   end
 
+  def reset_delayed_jobs_and_workers()
+    puts "Attempting to shutdown any old workers"
+    stop_delayed_workers
+    puts "Clearing old jobs "
+    clear_jobs
+
+  end
 end

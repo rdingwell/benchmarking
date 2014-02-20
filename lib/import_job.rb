@@ -19,7 +19,8 @@ class ImportJob
 
   def descrete_measurement(report)
     report.measure("Importing #{@params[:archive]}") do
-     is_json = @params[:format] == :json
+     is_json = @params[:format] == :json 
+     is_raw = @params[:no_record] 
        Zip::ZipFile.open(@params[:archive]) do |zip_file|
           entries = zip_file.entries
           length = entries.length
@@ -34,23 +35,29 @@ class ImportJob
               doc = is_json ? JSON.parse(str, max_nesting: 100) : Nokogiri::XML(str)
             end
 
-            if !is_json
-              report.measure :extracting_providers do 
-                begin
-                  providers = CDA::ProviderImporter.instance.extract_providers(doc)
-                rescue Exception => e
+            if is_raw && is_json
+              report.measure :save_to_database do
+                Mongoid.default_session["records"].insert(doc)
+              end  
+            else
+              if !is_json
+                report.measure :extracting_providers do 
+                  begin
+                    providers = CDA::ProviderImporter.instance.extract_providers(doc)
+                  rescue Exception => e
+                  end
                 end
               end
-            end
-            report.measure :transform_into_record_object do
-               if !is_json 
-                  doc.root.add_namespace_definition('cda', 'urn:hl7-org:v3')
-                  doc.root.add_namespace_definition('sdtc', 'urn:hl7-org:sdtc')
-               end
-              record = is_json ? Record.new(doc) : HealthDataStandards::Import::Cat1::PatientImporter.instance.parse_cat1(doc)
-            end
-            report.measure :save_to_database do
-             Record.update_or_create(record,{generate_mrn: true})
+              report.measure :transform_into_record_object do
+                 if !is_json 
+                    doc.root.add_namespace_definition('cda', 'urn:hl7-org:v3')
+                    doc.root.add_namespace_definition('sdtc', 'urn:hl7-org:sdtc')
+                 end
+                record = is_json ? Record.new(doc) : HealthDataStandards::Import::Cat1::PatientImporter.instance.parse_cat1(doc)
+              end
+              report.measure :save_to_database do
+               Record.update_or_create(record,{generate_mrn: true})
+              end
             end
           end
         end
@@ -64,7 +71,12 @@ class ImportJob
         entries = zip_file.glob("*.json")
         entries.each do |entry|
           json = zip_file.read(entry)
-          Record.new(JSON.parse(json,max_nesting: 100)).save!
+          doc = JSON.parse(json,max_nesting: 100)
+          if @params[:no_record] 
+            Mongoid.default_session["records"].insert
+          else
+            Record.new(doc).save!
+          end
         end
       end
     end
