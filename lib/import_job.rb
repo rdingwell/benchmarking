@@ -5,7 +5,6 @@ class ImportJob
   end
 
   def perform
-    puts "hey"
     @params[:label] ||= "Importing #{@params[:format]} Archive"
     report = Benchmarking::Report.new(@params)
       if @params[:descrete_measurement]
@@ -27,7 +26,6 @@ class ImportJob
           entries.each do |entry|
             str = nil
             record = nil
-           
             doc = nil
             report.measure :read_record_from_zip do
               str = zip_file.read(entry)

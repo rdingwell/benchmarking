@@ -21,11 +21,12 @@ namespace :import do
   end
 
   desc "importing from zip file" 
-  task :import_from_archive,[:working_directory, :number_of_records,:number_of_entries,:format, :force]  => :environment do |t,args|
+  task :import_from_archive,[:working_directory, :number_of_records,:number_of_entries,:format, :no_save, :no_record, :force]  => :environment do |t,args|
      rep = report "Import from archive: #{args.number_of_records} records -> #{args.number_of_entries} entries -> #{args.format} format" do
      working_directory = File.join(args.working_directory,args.format,"archive_#{args.format}_#{args.number_of_records}")
      archive_name = File.join(args.working_directory,args.format,"archive_#{args.format}_#{args.number_of_records}.zip")
      generate_archive file_name: archive_name , number_of_records: args.number_of_records.to_i, number_of_entries: args.number_of_entries.to_i, format: args.format.to_sym, force: args.force == "true"
+     drop_collection :records
       GC.start 
       Zip::ZipFile.open(archive_name) do |zip_file|
           entries = zip_file.entries
@@ -34,6 +35,8 @@ namespace :import do
             str = nil
             record = nil
             is_json = args.format == "json"
+            no_record = args.no_record=="true"
+            no_save = args.no_save == "true"
             doc = nil
             measure :read_record_from_zip do
               str = zip_file.read(entry)
@@ -51,15 +54,23 @@ namespace :import do
               end
             end
             measure :transform_into_record_object do
-               if !is_json 
-                  doc.root.add_namespace_definition('cda', 'urn:hl7-org:v3')
-                  doc.root.add_namespace_definition('sdtc', 'urn:hl7-org:sdtc')
-               end
-              record = is_json ? Record.new(doc) : HealthDataStandards::Import::Cat1::PatientImporter.instance.parse_cat1(doc)
+              if !is_json 
+                doc.root.add_namespace_definition('cda', 'urn:hl7-org:v3')
+                doc.root.add_namespace_definition('sdtc', 'urn:hl7-org:sdtc')
+              end
+              if is_json 
+                  record = no_record ? doc : Record.new(doc) 
+              else 
+                  record = HealthDataStandards::Import::Cat1::PatientImporter.instance.parse_cat1(doc)
+              end
             end
             measure :save_to_database do
-             Record.update_or_create(record,{generate_mrn: true})
-            end
+              if is_json && no_record
+                Mongoid.default_session["records"].insert(doc)
+              else  
+                Record.update_or_create(record,{generate_mrn: true})
+              end
+            end unless no_save
           end
         end
     end
@@ -68,7 +79,8 @@ namespace :import do
   end
 
 
-  task :parallel_import_archive,[:working_directory,:number_of_records, :number_of_entries, :format, :number_of_times,:workers,:descrete_measurement, :force] => :environment do |t,args|
+  task :parallel_import_archive,[:working_directory,:number_of_records, :number_of_entries, :format, :number_of_times,:workers,:force,:descrete_measurements, :no_save] => :environment do |t,args|
+
     #number of archives
     #number of processess
     #make sure that the delayed jobs are stopped
@@ -94,7 +106,9 @@ namespace :import do
     params.merge!({label:label, archive: archive, format: args.format.to_sym, correlation_id: correlation_id, descrete_measurement:args.descrete_measurement=="true"})
     puts "Generating #{args.number_of_times} Jobs"
     args.number_of_times.to_i.times do |i|
+
       ImportJob.new(params).delay.perform
+
     end
     puts "Starting #{args.workers}"
     start_delayed_workers(args.workers)
@@ -104,7 +118,7 @@ namespace :import do
        STDOUT.flush
      }
     stop_delayed_workers
-    bm = Benchmarking::Report.new(label: "Merged: #{label} ",
+    bm = Benchmarking::Report.new(params.mereg({label: "Merged: #{label} "}),
                                   correlation_id: correlation_id)
     
     puts "merging results"
