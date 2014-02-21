@@ -118,7 +118,7 @@ namespace :import do
        STDOUT.flush
      }
     stop_delayed_workers
-    bm = Benchmarking::Report.new(params.mereg({label: "Merged: #{label} "}),
+    bm = Benchmarking::Report.new(params.merge({label: "Merged: #{label} "}),
                                   correlation_id: correlation_id)
     
     puts "merging results"
