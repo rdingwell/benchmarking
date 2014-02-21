@@ -51,7 +51,9 @@ def transform
       @number_of_times.each do |i|
         i.times do
           if @params[:no_record]
+            report.measure("Save record with  #{entries} entires #{i} times") {
             Mongoid.default_session["records"].insert(json)
+          }
           else  
             r= Record.new(json)
             report.measure("Save record with  #{entries} entires #{i} times") {
